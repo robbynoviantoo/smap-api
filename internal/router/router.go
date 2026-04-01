@@ -36,20 +36,25 @@ func Setup(app *fiber.App, d Deps) {
 	})
 	app.Get("/ws", fiberws.New(ws.ChatHandler))
 
+	api := app.Group("/api/v1")
+
 	// ── Auth (public) ─────────────────────────────────────────────────────────
-	auth := app.Group("/auth")
+	auth := api.Group("/auth")
 	auth.Get("/", middleware.AuthRequired(),middleware.RequireRoles(config.DB, "superadmin") , d.AuthHandler.GetAllUsers)
 	auth.Post("/login", d.AuthHandler.Login)
 
 	// ── Role (public) ─────────────────────────────────────────────────────────
-	role := app.Group("/role")
+	role := api.Group("/role")
 	role.Get("/" , d.RoleHandler.GetAllRoles)
 	role.Post("/" , d.RoleHandler.CreateRole)
 	role.Put("/" , d.RoleHandler.UpdateRole)
 	role.Delete("/:id" , d.RoleHandler.DeleteRole)
 
 	// ── Asset (public) ─────────────────────────────────────────────────────────
-	asset := app.Group("/asset")
+	asset := api.Group("/asset")
 	asset.Get("/" , d.AssetHandler.GetAssets)
+	asset.Post("/" , d.AssetHandler.CreateAsset)
+	asset.Put("/" , d.AssetHandler.UpdateAsset)
+	asset.Delete("/:id" , d.AssetHandler.DeleteAsset)
 
 }

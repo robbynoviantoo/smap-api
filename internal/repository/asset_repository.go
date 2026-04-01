@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"smap-api/internal/model"
 	"strings"
+	"time"
 )
 
 type AssetRepository struct {
@@ -171,4 +172,60 @@ func (r *AssetRepository) CountAssets(ctx context.Context, filter model.AssetFil
 	var count int
 	err := r.db.QueryRowContext(ctx, query, args...).Scan(&count)
 	return count, err
+}
+
+func (r *AssetRepository) CreateAsset(ctx context.Context, asset *model.AssetCreateRequest) error {
+	now := time.Now()
+	query := `INSERT INTO assets (name, image, asset, no_asset, location, building, category, sub_category, merk, size, unit, status, available_status, last_maintenance, next_maintenance, remarks, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	_, err := r.db.ExecContext(ctx, query,
+		asset.Name,
+		asset.Image,
+		asset.AssetCode,
+		asset.NoAsset,
+		asset.Location,
+		asset.Building,
+		asset.Category,
+		asset.SubCategory,
+		asset.Merk,
+		asset.Size,
+		asset.Unit,
+		asset.Status,
+		asset.AvailableStatus,
+		asset.LastMaintenance,
+		asset.NextMaintenance,
+		asset.Remarks,
+		now,
+		now)
+	return err
+}
+
+func (r *AssetRepository) UpdateAsset(ctx context.Context, asset *model.AssetUpdateRequest) error {
+	now := time.Now()
+	query := `UPDATE assets SET name = ?, image = ?, asset = ?, no_asset = ?, location = ?, building = ?, category = ?, sub_category = ?, merk = ?, size = ?, unit = ?, status = ?, available_status = ?, last_maintenance = ?, next_maintenance = ?, remarks = ?, updated_at = ? WHERE id = ?`
+	_, err := r.db.ExecContext(ctx, query,
+		asset.Name,
+		asset.Image,
+		asset.AssetCode,
+		asset.NoAsset,
+		asset.Location,
+		asset.Building,
+		asset.Category,
+		asset.SubCategory,
+		asset.Merk,
+		asset.Size,
+		asset.Unit,
+		asset.Status,
+		asset.AvailableStatus,
+		asset.LastMaintenance,
+		asset.NextMaintenance,
+		asset.Remarks,
+		now,
+		asset.ID)
+	return err
+}
+
+func (r *AssetRepository) DeleteAsset(ctx context.Context, id string) error {
+	query := `DELETE FROM assets WHERE id = ?`
+	_, err := r.db.ExecContext(ctx, query, id)
+	return err
 }

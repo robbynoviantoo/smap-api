@@ -44,6 +44,7 @@ func (h *AssetHandler) GetAssets(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": "failed to fetch assets",
+			"detail": err.Error(),
 		})
 	}
 
@@ -57,5 +58,62 @@ func (h *AssetHandler) GetAssets(c *fiber.Ctx) error {
 			"total":       total,
 			"total_pages": totalPages,
 		},
+	})
+}
+
+func (h *AssetHandler) CreateAsset(c *fiber.Ctx) error {
+	var req model.AssetCreateRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid request body",
+		})
+	}
+	err := h.assetSvc.CreateAsset(c.Context(), &req)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to create asset",
+			"detail": err.Error(),
+		})
+	}
+	return c.JSON(fiber.Map{
+		"message": "asset created successfully",
+	})
+}
+
+func (h *AssetHandler) UpdateAsset(c *fiber.Ctx) error {
+	var req model.AssetUpdateRequest
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "invalid request body",
+		})
+	}
+	err := h.assetSvc.UpdateAsset(c.Context(), &req)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to update asset",
+			"detail": err.Error(),
+		})
+	}
+	return c.JSON(fiber.Map{
+		"message": "asset updated successfully",
+	})
+}
+
+func (h *AssetHandler) DeleteAsset(c *fiber.Ctx) error {
+	id := c.Params("id")
+	if id == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "asset id is required",
+		})
+	}
+	err := h.assetSvc.DeleteAsset(c.Context(), id)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "failed to delete asset",
+			"detail": err.Error(),
+		})
+	}
+	return c.JSON(fiber.Map{
+		"message": "asset deleted successfully",
 	})
 }

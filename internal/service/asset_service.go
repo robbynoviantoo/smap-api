@@ -31,3 +31,15 @@ func (s *AssetService) GetAssetsWithCount(ctx context.Context, limit, offset int
 
 	return assets, total, nil
 }
+
+func (s *AssetService) CreateAsset(ctx context.Context, asset *model.AssetCreateRequest) error {
+	return s.repo.CreateAsset(ctx, asset)
+}
+
+func (s *AssetService) UpdateAsset(ctx context.Context, asset *model.AssetUpdateRequest) error {
+	return s.repo.UpdateAsset(ctx, asset)
+}
+
+func (s *AssetService) DeleteAsset(ctx context.Context, id string) error {
+	return s.repo.DeleteAsset(ctx, id)
+}
