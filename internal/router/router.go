@@ -11,10 +11,12 @@ import (
 )
 
 type Deps struct {
-	AuthHandler    *handler.AuthHandler
-	RoleHandler    *handler.RoleHandler
-	AssetHandler   *handler.AssetHandler
-
+	AuthHandler         *handler.AuthHandler
+	RoleHandler         *handler.RoleHandler
+	AssetHandler        *handler.AssetHandler
+	AssetPendingHandler *handler.AssetPendingHandler
+	ChatHandler         *handler.ChatHandler
+	MaintenanceHandler  *handler.AssetMaintenanceHandler
 }
 
 func Setup(app *fiber.App, d Deps) {
@@ -52,9 +54,32 @@ func Setup(app *fiber.App, d Deps) {
 
 	// ── Asset (public) ─────────────────────────────────────────────────────────
 	asset := api.Group("/asset")
-	asset.Get("/" , d.AssetHandler.GetAssets)
-	asset.Post("/" , d.AssetHandler.CreateAsset)
-	asset.Put("/" , d.AssetHandler.UpdateAsset)
-	asset.Delete("/:id" , d.AssetHandler.DeleteAsset)
+	asset.Get("/", d.AssetHandler.GetAssets)
+	asset.Get("/export", d.AssetHandler.ExportAssets)
+	asset.Post("/import", d.AssetHandler.ImportAssets)
+	// Create goes to pending table
+	asset.Post("/", middleware.AuthRequired(), d.AssetPendingHandler.CreatePending)
+	asset.Put("/", d.AssetHandler.UpdateAsset)
+	asset.Delete("/:id", d.AssetHandler.DeleteAsset)
 
+	// ── Asset Pending (Review) ─────────────────────────────────────────────────
+	assetPending := api.Group("/asset_pending")
+	// Require Auth + Admin/Reviewer roles for these
+	assetPending.Get("/", middleware.AuthRequired(), d.AssetPendingHandler.GetAllPendings)
+	assetPending.Post("/:id/review", middleware.AuthRequired(), d.AssetPendingHandler.ReviewPending)
+
+	// ── Chat (REST API) ────────────────────────────────────────────────────────
+	chat := api.Group("/chat")
+	chat.Get("/history", middleware.AuthRequired(), d.ChatHandler.GetHistory)
+
+	// ── Asset Maintenance ──────────────────────────────────────────────────────
+	mnt := api.Group("/asset_maintenance")
+	mnt.Post("/:id/schedule", middleware.AuthRequired(), d.MaintenanceHandler.Schedule)
+	mnt.Post("/:id/start", middleware.AuthRequired(), d.MaintenanceHandler.Start)
+	mnt.Post("/:id/finish", middleware.AuthRequired(), d.MaintenanceHandler.Finish)
+
+	// Admin/Reviewer routes for maintenance pendings
+	mntPending := api.Group("/asset_maintenance_pending")
+	mntPending.Get("/", middleware.AuthRequired(), d.MaintenanceHandler.GetAllPendings)
+	mntPending.Post("/:id/review", middleware.AuthRequired(), d.MaintenanceHandler.ReviewPending)
 }

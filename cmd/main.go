@@ -9,7 +9,7 @@ import (
 	"smap-api/internal/repository"
 	"smap-api/internal/router"
 	"smap-api/internal/service"
-	// "booking-bioskop/internal/ws"
+	"smap-api/internal/ws"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -33,21 +33,35 @@ func main() {
 	userRepo := repository.NewUserRepository(config.DB)
 	roleRepo := repository.NewRoleRepository(config.DB)
 	assetRepo := repository.NewAssetRepository(config.DB)
+	assetPendingRepo := repository.NewAssetPendingRepository(config.DB)
+	messageRepo := repository.NewMessageRepository(config.DB)
+	settingRepo := repository.NewSettingRepository(config.DB)
+	maintenanceRepo := repository.NewAssetMaintenanceRepository(config.DB)
 
 	// ─── Services ───────────────────────────────────────────────────────────────
 	// hub := ws.GlobalHub
 	userSvc := service.NewUserService(userRepo)
 	roleSvc := service.NewRoleService(roleRepo)
 	assetSvc := service.NewAssetService(assetRepo)
+	assetPendingSvc := service.NewAssetPendingService(assetPendingRepo, assetRepo)
+	messageSvc := service.NewMessageService(messageRepo)
+	settingSvc := service.NewSettingService(settingRepo)
+	maintenanceSvc := service.NewAssetMaintenanceService(maintenanceRepo, assetRepo, settingSvc)
+
+	// Setup Hub Persistence
+	ws.GlobalHub.MessageSvc = messageSvc
 
 	// ─── Handlers ───────────────────────────────────────────────────────────────
 	authH := handler.NewAuthHandler(userSvc)
 	roleH := handler.NewRoleHandler(roleSvc)
 	assetH := handler.NewAssetHandler(assetSvc)
+	assetPendingH := handler.NewAssetPendingHandler(assetPendingSvc)
+	chatH := handler.NewChatHandler(messageSvc)
+	maintenanceH := handler.NewAssetMaintenanceHandler(maintenanceSvc)
 
 	// ─── Fiber App ───────────────────────────────────────────────────────────────
 	app := fiber.New(fiber.Config{
-		AppName: "Booking Bioskop API v1.0",
+		AppName: "SMAP API v1.0",
 	})
 
 	// Global middleware
@@ -61,9 +75,12 @@ func main() {
 
 	// Register all routes
 	router.Setup(app, router.Deps{
-		AuthHandler:    authH,
-		RoleHandler:    roleH,
-		AssetHandler:   assetH,
+		AuthHandler:         authH,
+		RoleHandler:         roleH,
+		AssetHandler:        assetH,
+		AssetPendingHandler: assetPendingH,
+		ChatHandler:         chatH,
+		MaintenanceHandler:  maintenanceH,
 	})
 
 	log.Printf("[Main] Server starting on :%s", config.App.AppPort)

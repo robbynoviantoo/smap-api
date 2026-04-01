@@ -1,8 +1,11 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
 	"log"
+	"smap-api/internal/model"
+	"smap-api/internal/service"
 	"sync"
 
 	"github.com/gofiber/websocket/v2"
@@ -22,10 +25,10 @@ type Client struct {
 	UserID uint
 }
 
-// Hub untuk manage semua koneksi
 type Hub struct {
-	mu      sync.RWMutex
-	clients map[*websocket.Conn]*Client
+	mu         sync.RWMutex
+	clients    map[*websocket.Conn]*Client
+	MessageSvc *service.MessageService
 }
 
 // global instance
@@ -57,6 +60,19 @@ func (h *Hub) Unregister(conn *websocket.Conn) {
 
 // Kirim ke user tertentu (PRIVATE CHAT)
 func (h *Hub) SendToUser(userID uint, message Message) {
+	// Persistence
+	if h.MessageSvc != nil {
+		dbMsg := &model.Message{
+			SenderID:    message.SenderID,
+			RecipientID: message.RecipientID,
+			Content:     message.Content,
+			IsRead:      false,
+		}
+		if err := h.MessageSvc.SaveMessage(context.Background(), dbMsg); err != nil {
+			log.Println("[WS] db save message error:", err)
+		}
+	}
+
 	payload, err := json.Marshal(message)
 	if err != nil {
 		log.Println("[WS] Marshal error:", err)

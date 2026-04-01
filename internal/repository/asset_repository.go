@@ -199,6 +199,52 @@ func (r *AssetRepository) CreateAsset(ctx context.Context, asset *model.AssetCre
 	return err
 }
 
+func (r *AssetRepository) GetAssetByID(ctx context.Context, id uint) (*model.Asset, error) {
+	query := `
+	SELECT id, name, image, asset, no_asset, location, building, category, sub_category, merk, size, unit, status, available_status, last_maintenance, next_maintenance, remarks, created_at, updated_at 
+	FROM assets
+	WHERE id = ?`
+
+	row := r.db.QueryRowContext(ctx, query, id)
+	var asset model.Asset
+	var image, subCategory, remarks, status sql.NullString
+
+	err := row.Scan(
+		&asset.ID,
+		&asset.Name,
+		&image,
+		&asset.AssetCode,
+		&asset.NoAsset,
+		&asset.Location,
+		&asset.Building,
+		&asset.Category,
+		&subCategory,
+		&asset.Merk,
+		&asset.Size,
+		&asset.Unit,
+		&status,
+		&asset.AvailableStatus,
+		&asset.LastMaintenance,
+		&asset.NextMaintenance,
+		&remarks,
+		&asset.CreatedAt,
+		&asset.UpdatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	if image.Valid { asset.Image = image.String }
+	if subCategory.Valid { asset.SubCategory = subCategory.String }
+	if remarks.Valid { asset.Remarks = remarks.String }
+	if status.Valid { asset.Status = status.String }
+
+	return &asset, nil
+}
+
 func (r *AssetRepository) UpdateAsset(ctx context.Context, asset *model.AssetUpdateRequest) error {
 	now := time.Now()
 	query := `UPDATE assets SET name = ?, image = ?, asset = ?, no_asset = ?, location = ?, building = ?, category = ?, sub_category = ?, merk = ?, size = ?, unit = ?, status = ?, available_status = ?, last_maintenance = ?, next_maintenance = ?, remarks = ?, updated_at = ? WHERE id = ?`

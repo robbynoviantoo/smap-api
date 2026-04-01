@@ -32,6 +32,10 @@ func (s *AssetService) GetAssetsWithCount(ctx context.Context, limit, offset int
 	return assets, total, nil
 }
 
+func (s *AssetService) GetAssetByID(ctx context.Context, id uint) (*model.Asset, error) {
+	return s.repo.GetAssetByID(ctx, id)
+}
+
 func (s *AssetService) CreateAsset(ctx context.Context, asset *model.AssetCreateRequest) error {
 	return s.repo.CreateAsset(ctx, asset)
 }
