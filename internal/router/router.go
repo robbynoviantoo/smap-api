@@ -11,12 +11,15 @@ import (
 )
 
 type Deps struct {
-	AuthHandler         *handler.AuthHandler
-	RoleHandler         *handler.RoleHandler
-	AssetHandler        *handler.AssetHandler
-	AssetPendingHandler *handler.AssetPendingHandler
-	ChatHandler         *handler.ChatHandler
-	MaintenanceHandler  *handler.AssetMaintenanceHandler
+	AuthHandler             *handler.AuthHandler
+	RoleHandler             *handler.RoleHandler
+	AssetHandler            *handler.AssetHandler
+	AssetPendingHandler     *handler.AssetPendingHandler
+	ChatHandler             *handler.ChatHandler
+	MaintenanceHandler      *handler.AssetMaintenanceHandler
+	BorrowHandler           *handler.AssetBorrowHandler
+	EventHandler            *handler.EventHandler
+	PengadaanPendingHandler *handler.PengadaanAssetPendingHandler
 }
 
 func Setup(app *fiber.App, d Deps) {
@@ -42,15 +45,15 @@ func Setup(app *fiber.App, d Deps) {
 
 	// ── Auth (public) ─────────────────────────────────────────────────────────
 	auth := api.Group("/auth")
-	auth.Get("/", middleware.AuthRequired(),middleware.RequireRoles(config.DB, "superadmin") , d.AuthHandler.GetAllUsers)
+	auth.Get("/", middleware.AuthRequired(), middleware.RequireRoles(config.DB, "superadmin"), d.AuthHandler.GetAllUsers)
 	auth.Post("/login", d.AuthHandler.Login)
 
 	// ── Role (public) ─────────────────────────────────────────────────────────
 	role := api.Group("/role")
-	role.Get("/" , d.RoleHandler.GetAllRoles)
-	role.Post("/" , d.RoleHandler.CreateRole)
-	role.Put("/" , d.RoleHandler.UpdateRole)
-	role.Delete("/:id" , d.RoleHandler.DeleteRole)
+	role.Get("/", d.RoleHandler.GetAllRoles)
+	role.Post("/", d.RoleHandler.CreateRole)
+	role.Put("/", d.RoleHandler.UpdateRole)
+	role.Delete("/:id", d.RoleHandler.DeleteRole)
 
 	// ── Asset (public) ─────────────────────────────────────────────────────────
 	asset := api.Group("/asset")
@@ -82,4 +85,32 @@ func Setup(app *fiber.App, d Deps) {
 	mntPending := api.Group("/asset_maintenance_pending")
 	mntPending.Get("/", middleware.AuthRequired(), d.MaintenanceHandler.GetAllPendings)
 	mntPending.Post("/:id/review", middleware.AuthRequired(), d.MaintenanceHandler.ReviewPending)
+
+	// ── Asset Borrow ───────────────────────────────────────────────────────────
+	borrow := api.Group("/asset_borrow")
+	borrow.Post("/:id/borrow", middleware.AuthRequired(), d.BorrowHandler.Borrow)
+	borrow.Post("/:id/return", middleware.AuthRequired(), d.BorrowHandler.Return)
+
+	// Admin/Reviewer routes for borrow pendings
+	borrowPending := api.Group("/asset_borrow_pending")
+	borrowPending.Get("/", middleware.AuthRequired(), d.BorrowHandler.GetAllPendings)
+	borrowPending.Post("/:id/review", middleware.AuthRequired(), d.BorrowHandler.ReviewPending)
+
+	// ── Events ───────────────────────────────────────────────────────────
+	events := api.Group("/events")
+	events.Get("/", d.EventHandler.GetAll)
+	events.Post("/", middleware.AuthRequired(), d.EventHandler.Create)
+	events.Put("/:id", middleware.AuthRequired(), d.EventHandler.Update)
+	events.Delete("/:id", middleware.AuthRequired(), d.EventHandler.Delete)
+	events.Post("/sync-holidays", middleware.AuthRequired(), d.EventHandler.SyncHolidays)
+
+	// ── Pengadaan Asset Pending ──────────────────────────────────────────
+	pengadaan := api.Group("/pengadaan_asset_pending")
+	pengadaan.Post("/", middleware.AuthRequired(), d.PengadaanPendingHandler.Create)
+	pengadaan.Get("/", middleware.AuthRequired(), d.PengadaanPendingHandler.GetAll)
+	pengadaan.Get("/:id", middleware.AuthRequired(), d.PengadaanPendingHandler.GetByID)
+	pengadaan.Put("/:id", middleware.AuthRequired(), d.PengadaanPendingHandler.Update)
+	pengadaan.Delete("/:id", middleware.AuthRequired(), d.PengadaanPendingHandler.Delete)
+	pengadaan.Post("/:id/approve", middleware.AuthRequired(), d.PengadaanPendingHandler.Approve)
+	pengadaan.Post("/:id/reject", middleware.AuthRequired(), d.PengadaanPendingHandler.Reject)
 }

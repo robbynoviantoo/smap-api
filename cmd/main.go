@@ -37,6 +37,9 @@ func main() {
 	messageRepo := repository.NewMessageRepository(config.DB)
 	settingRepo := repository.NewSettingRepository(config.DB)
 	maintenanceRepo := repository.NewAssetMaintenanceRepository(config.DB)
+	borrowRepo := repository.NewAssetBorrowRepository(config.DB)
+	eventRepo := repository.NewEventRepository(config.DB)
+	pengadaanPendingRepo := repository.NewPengadaanAssetPendingRepository(config.DB)
 
 	// ─── Services ───────────────────────────────────────────────────────────────
 	// hub := ws.GlobalHub
@@ -47,6 +50,9 @@ func main() {
 	messageSvc := service.NewMessageService(messageRepo)
 	settingSvc := service.NewSettingService(settingRepo)
 	maintenanceSvc := service.NewAssetMaintenanceService(maintenanceRepo, assetRepo, settingSvc)
+	borrowSvc := service.NewAssetBorrowService(borrowRepo, assetRepo)
+	eventSvc := service.NewEventService(eventRepo)
+	pengadaanPendingSvc := service.NewPengadaanAssetPendingService(pengadaanPendingRepo)
 
 	// Setup Hub Persistence
 	ws.GlobalHub.MessageSvc = messageSvc
@@ -58,6 +64,9 @@ func main() {
 	assetPendingH := handler.NewAssetPendingHandler(assetPendingSvc)
 	chatH := handler.NewChatHandler(messageSvc)
 	maintenanceH := handler.NewAssetMaintenanceHandler(maintenanceSvc)
+	borrowH := handler.NewAssetBorrowHandler(borrowSvc)
+	eventH := handler.NewEventHandler(eventSvc)
+	pengadaanPendingH := handler.NewPengadaanAssetPendingHandler(pengadaanPendingSvc)
 
 	// ─── Fiber App ───────────────────────────────────────────────────────────────
 	app := fiber.New(fiber.Config{
@@ -75,12 +84,15 @@ func main() {
 
 	// Register all routes
 	router.Setup(app, router.Deps{
-		AuthHandler:         authH,
-		RoleHandler:         roleH,
-		AssetHandler:        assetH,
-		AssetPendingHandler: assetPendingH,
-		ChatHandler:         chatH,
-		MaintenanceHandler:  maintenanceH,
+		AuthHandler:             authH,
+		RoleHandler:             roleH,
+		AssetHandler:            assetH,
+		AssetPendingHandler:     assetPendingH,
+		ChatHandler:             chatH,
+		MaintenanceHandler:      maintenanceH,
+		BorrowHandler:           borrowH,
+		EventHandler:            eventH,
+		PengadaanPendingHandler: pengadaanPendingH,
 	})
 
 	log.Printf("[Main] Server starting on :%s", config.App.AppPort)
