@@ -270,8 +270,139 @@ func (r *AssetRepository) UpdateAsset(ctx context.Context, asset *model.AssetUpd
 	return err
 }
 
-func (r *AssetRepository) DeleteAsset(ctx context.Context, id string) error {
-	query := `DELETE FROM assets WHERE id = ?`
-	_, err := r.db.ExecContext(ctx, query, id)
-	return err
+// DeleteWithBackup menyimpan backup ke asset_deletes lalu menghapus asset, dalam satu transaksi.
+func (r *AssetRepository) DeleteWithBackup(ctx context.Context, id uint, deletedBy *uint) error {
+	// 1. Ambil data asset dulu
+	asset, err := r.GetAssetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if asset == nil {
+		return fmt.Errorf("asset with id %d not found", id)
+	}
+
+	// 2. Mulai transaksi
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
+
+	// 3. Insert backup
+	_, err = tx.ExecContext(ctx, `
+		INSERT INTO asset_deletes
+		  (asset_id, name, image, asset, no_asset, location, building, category,
+		   sub_category, merk, size, unit, status, available_status,
+		   last_maintenance, next_maintenance, remarks,
+		   asset_created_at, asset_updated_at, deleted_by, created_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+		asset.ID, asset.Name, asset.Image, asset.AssetCode, asset.NoAsset,
+		asset.Location, asset.Building, asset.Category, asset.SubCategory,
+		asset.Merk, asset.Size, asset.Unit, asset.Status, asset.AvailableStatus,
+		asset.LastMaintenance, asset.NextMaintenance, asset.Remarks,
+		asset.CreatedAt, asset.UpdatedAt,
+		deletedBy,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to backup asset: %w", err)
+	}
+
+	// 4. Hapus asset asli
+	_, err = tx.ExecContext(ctx, `DELETE FROM assets WHERE id = ?`, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete asset: %w", err)
+	}
+
+	return tx.Commit()
+}
+
+
+// GetDashboardStats mengembalikan ringkasan jumlah per status asset.
+func (r *AssetRepository) GetDashboardStats(ctx context.Context) (total, maintenance, good, broken, borrowed int, err error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT
+			COUNT(*) AS total,
+			SUM(CASE WHEN status = 'maintenance' THEN 1 ELSE 0 END) AS maintenance,
+			SUM(CASE WHEN status = 'good' THEN 1 ELSE 0 END) AS good,
+			SUM(CASE WHEN status = 'broken' THEN 1 ELSE 0 END) AS broken,
+			SUM(CASE WHEN available_status = 'borrowed' THEN 1 ELSE 0 END) AS borrowed
+		FROM assets`)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	if rows.Next() {
+		rows.Scan(&total, &maintenance, &good, &broken, &borrowed)
+	}
+	return
+}
+
+// GetMonthlyMaintenance mengembalikan jumlah asset yang perlu maintenance tiap bulan (12 bulan ke depan dari sekarang).
+func (r *AssetRepository) GetMonthlyMaintenance(ctx context.Context) ([]map[string]interface{}, error) {
+	var result []map[string]interface{}
+	now := time.Now()
+	for i := 0; i < 12; i++ {
+		d := now.AddDate(0, i, 0)
+		var count int
+		err := r.db.QueryRowContext(ctx,
+			`SELECT COUNT(*) FROM assets WHERE next_maintenance IS NOT NULL AND MONTH(next_maintenance) = ? AND YEAR(next_maintenance) = ?`,
+			d.Month(), d.Year(),
+		).Scan(&count)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, map[string]interface{}{
+			"month": d.Format("Jan"),
+			"count": count,
+		})
+	}
+	return result, nil
+}
+
+// GetDeletedAssets mengambil list asset yang sudah dihapus dari tabel asset_deletes.
+func (r *AssetRepository) GetDeletedAssets(ctx context.Context, limit, offset int) ([]model.AssetDelete, error) {
+	rows, err := r.db.QueryContext(ctx, `
+		SELECT id, asset_id, name,
+		       COALESCE(image,''), COALESCE(asset,''), COALESCE(no_asset,''),
+		       COALESCE(location,''), COALESCE(building,''), COALESCE(category,''),
+		       COALESCE(sub_category,''), COALESCE(merk,''), COALESCE(size,''),
+		       COALESCE(unit,''), COALESCE(status,''), COALESCE(available_status,''),
+		       last_maintenance, next_maintenance, COALESCE(remarks,''),
+		       asset_created_at, asset_updated_at, deleted_by, created_at
+		FROM asset_deletes
+		ORDER BY id DESC
+		LIMIT ? OFFSET ?`, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []model.AssetDelete
+	for rows.Next() {
+		var d model.AssetDelete
+		if err := rows.Scan(
+			&d.ID, &d.AssetID, &d.Name,
+			&d.Image, &d.AssetCode, &d.NoAsset,
+			&d.Location, &d.Building, &d.Category,
+			&d.SubCategory, &d.Merk, &d.Size,
+			&d.Unit, &d.Status, &d.AvailableStatus,
+			&d.LastMaintenance, &d.NextMaintenance, &d.Remarks,
+			&d.AssetCreatedAt, &d.AssetUpdatedAt, &d.DeletedBy, &d.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		list = append(list, d)
+	}
+	return list, nil
+}
+
+// CountDeletedAssets mengembalikan total jumlah record di asset_deletes.
+func (r *AssetRepository) CountDeletedAssets(ctx context.Context) (int, error) {
+	var count int
+	err := r.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM asset_deletes`).Scan(&count)
+	return count, err
 }

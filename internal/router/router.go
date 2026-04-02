@@ -20,6 +20,7 @@ type Deps struct {
 	BorrowHandler           *handler.AssetBorrowHandler
 	EventHandler            *handler.EventHandler
 	PengadaanPendingHandler *handler.PengadaanAssetPendingHandler
+	DashboardHandler        *handler.DashboardHandler
 }
 
 func Setup(app *fiber.App, d Deps) {
@@ -47,6 +48,8 @@ func Setup(app *fiber.App, d Deps) {
 	auth := api.Group("/auth")
 	auth.Get("/", middleware.AuthRequired(), middleware.RequireRoles(config.DB, "superadmin"), d.AuthHandler.GetAllUsers)
 	auth.Post("/login", d.AuthHandler.Login)
+	auth.Get("/me", middleware.AuthRequired(), d.AuthHandler.GetMe)
+	auth.Post("/onboarding", middleware.AuthRequired(), d.AuthHandler.CompleteOnboarding)
 
 	// ── Role (public) ─────────────────────────────────────────────────────────
 	role := api.Group("/role")
@@ -59,11 +62,13 @@ func Setup(app *fiber.App, d Deps) {
 	asset := api.Group("/asset")
 	asset.Get("/", d.AssetHandler.GetAssets)
 	asset.Get("/export", d.AssetHandler.ExportAssets)
+	asset.Get("/deleted", middleware.AuthRequired(), d.AssetHandler.GetDeletedAssets)
 	asset.Post("/import", d.AssetHandler.ImportAssets)
 	// Create goes to pending table
 	asset.Post("/", middleware.AuthRequired(), d.AssetPendingHandler.CreatePending)
 	asset.Put("/", d.AssetHandler.UpdateAsset)
-	asset.Delete("/:id", d.AssetHandler.DeleteAsset)
+	asset.Delete("/:id", middleware.AuthRequired(), d.AssetHandler.DeleteAsset)
+
 
 	// ── Asset Pending (Review) ─────────────────────────────────────────────────
 	assetPending := api.Group("/asset_pending")
@@ -113,4 +118,8 @@ func Setup(app *fiber.App, d Deps) {
 	pengadaan.Delete("/:id", middleware.AuthRequired(), d.PengadaanPendingHandler.Delete)
 	pengadaan.Post("/:id/approve", middleware.AuthRequired(), d.PengadaanPendingHandler.Approve)
 	pengadaan.Post("/:id/reject", middleware.AuthRequired(), d.PengadaanPendingHandler.Reject)
+
+	// ── Dashboard ────────────────────────────────────────────────────────
+	dash := api.Group("/dashboard")
+	dash.Get("/stats", middleware.AuthRequired(), d.DashboardHandler.GetStats)
 }

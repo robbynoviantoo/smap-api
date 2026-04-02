@@ -4,9 +4,11 @@ import (
 	"math"
 	"smap-api/internal/model"
 	"smap-api/internal/service"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
+
 
 type AssetHandler struct {
 	assetSvc *service.AssetService
@@ -100,20 +102,56 @@ func (h *AssetHandler) UpdateAsset(c *fiber.Ctx) error {
 }
 
 func (h *AssetHandler) DeleteAsset(c *fiber.Ctx) error {
-	id := c.Params("id")
-	if id == "" {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "asset id is required",
-		})
+	idStr := c.Params("id")
+	if idStr == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "asset id is required"})
 	}
-	err := h.assetSvc.DeleteAsset(c.Context(), id)
+
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid asset id"})
+	}
+
+	// Ambil user_id dari token (opsional — nil jika tidak ada)
+	var deletedBy *uint
+	if uid := c.Locals("user_id"); uid != nil {
+		v := uid.(uint)
+		deletedBy = &v
+	}
+
+	if err := h.assetSvc.DeleteAsset(c.Context(), uint(id), deletedBy); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "failed to delete asset",
+			"error":  "failed to delete asset",
 			"detail": err.Error(),
 		})
 	}
-	return c.JSON(fiber.Map{
-		"message": "asset deleted successfully",
-	})
+	return c.JSON(fiber.Map{"message": "asset deleted successfully (backup saved)"})
 }
+
+// GetDeletedAssets godoc
+// GET /api/v1/asset/deleted
+func (h *AssetHandler) GetDeletedAssets(c *fiber.Ctx) error {
+	limit := c.QueryInt("limit", 20)
+	page := c.QueryInt("page", 1)
+	if limit > 100 {
+		limit = 100
+	}
+	if page < 1 {
+		page = 1
+	}
+	offset := (page - 1) * limit
+
+	data, total, err := h.assetSvc.GetDeletedAssets(c.Context(), limit, offset)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to fetch deleted assets"})
+	}
+
+	return c.JSON(fiber.Map{
+		"data": data,
+		"meta": fiber.Map{
+			"page":  page,
+			"limit": limit,
+			"total": total,
+		},
+	})
+}

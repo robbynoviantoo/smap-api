@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"smap-api/internal/model"
+	"time"
 )
+
 
 type UserRepository struct {
 	db *sql.DB
@@ -17,8 +19,19 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*model.User, error) {
 	user := &model.User{}
 	row := r.db.QueryRowContext(ctx,
-		`SELECT id, first_name, last_name, email, password, created_at FROM users WHERE email = ?`, email)
-	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.CreatedAt)
+		`SELECT id, first_name, last_name, email, password, is_first_login, created_at FROM users WHERE email = ?`, email)
+	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Password, &user.IsFirstLogin, &user.CreatedAt)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return user, err
+}
+
+func (r *UserRepository) FindByID(ctx context.Context, id uint) (*model.User, error) {
+	user := &model.User{}
+	row := r.db.QueryRowContext(ctx,
+		`SELECT id, first_name, last_name, email, image, no_handphone, is_first_login, created_at FROM users WHERE id = ?`, id)
+	err := row.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Image, &user.NoHandphone, &user.IsFirstLogin, &user.CreatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -65,4 +78,24 @@ func (r *UserRepository) GetUserRoles(ctx context.Context, userID uint) ([]strin
 	}
 
 	return roles, nil
+}
+
+// UpdateOnboarding menyimpan data profil pertama kali login dan set is_first_login = false.
+func (r *UserRepository) UpdateOnboarding(ctx context.Context, userID uint, firstName, lastName, noHandphone, hashedPassword, image string) error {
+	now := time.Now()
+	query := `UPDATE users
+		SET first_name = ?,
+		    last_name  = ?,
+		    no_handphone = ?,
+		    password   = ?,
+		    image      = CASE WHEN ? != '' THEN ? ELSE image END,
+		    is_first_login = 0,
+		    updated_at = ?
+		WHERE id = ?`
+	_, err := r.db.ExecContext(ctx, query,
+		firstName, lastName, noHandphone, hashedPassword,
+		image, image, // CASE args
+		now, userID,
+	)
+	return err
 }

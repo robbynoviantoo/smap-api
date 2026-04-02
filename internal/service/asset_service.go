@@ -44,6 +44,19 @@ func (s *AssetService) UpdateAsset(ctx context.Context, asset *model.AssetUpdate
 	return s.repo.UpdateAsset(ctx, asset)
 }
 
-func (s *AssetService) DeleteAsset(ctx context.Context, id string) error {
-	return s.repo.DeleteAsset(ctx, id)
+func (s *AssetService) DeleteAsset(ctx context.Context, id uint, deletedBy *uint) error {
+	return s.repo.DeleteWithBackup(ctx, id, deletedBy)
+}
+
+// GetDeletedAssets mengembalikan list asset yang sudah dihapus beserta total.
+func (s *AssetService) GetDeletedAssets(ctx context.Context, limit, offset int) ([]model.AssetDelete, int, error) {
+	list, err := s.repo.GetDeletedAssets(ctx, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := s.repo.CountDeletedAssets(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
 }

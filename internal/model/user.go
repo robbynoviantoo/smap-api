@@ -51,3 +51,11 @@ type LoginResponse struct {
 	User  User   `json:"user"`
     Roles []string `json:"roles"`
 }
+
+type OnboardingRequest struct {
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name,omitempty"`
+	NoHandphone string `json:"no_handphone"`
+	Password    string `json:"password"`
+	PhotoCropped string `json:"photo_cropped,omitempty"`
+}

@@ -67,6 +67,7 @@ func main() {
 	borrowH := handler.NewAssetBorrowHandler(borrowSvc)
 	eventH := handler.NewEventHandler(eventSvc)
 	pengadaanPendingH := handler.NewPengadaanAssetPendingHandler(pengadaanPendingSvc)
+	dashboardH := handler.NewDashboardHandler(assetRepo)
 
 	// ─── Fiber App ───────────────────────────────────────────────────────────────
 	app := fiber.New(fiber.Config{
@@ -93,6 +94,7 @@ func main() {
 		BorrowHandler:           borrowH,
 		EventHandler:            eventH,
 		PengadaanPendingHandler: pengadaanPendingH,
+		DashboardHandler:        dashboardH,
 	})
 
 	log.Printf("[Main] Server starting on :%s", config.App.AppPort)

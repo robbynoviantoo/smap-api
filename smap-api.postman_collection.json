@@ -1,0 +1,450 @@
+{
+  "info": {
+    "_postman_id": "smap-api-collection",
+    "name": "SMAP API",
+    "description": "SMAP Asset Management API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "token",   "value": "",                      "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","login"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}" }
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/me", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","me"] }
+          }
+        },
+        {
+          "name": "Onboarding (First Login)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/onboarding", "host": ["{{baseUrl}}"], "path": ["api","v1","auth","onboarding"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"first_name\": \"Budi\",\n  \"last_name\": \"Santoso\",\n  \"no_handphone\": \"08123456789\",\n  \"password\": \"RahasiaKuat123!\",\n  \"photo_cropped\": \"\"\n}" }
+          }
+        },
+        {
+          "name": "Get All Users (Superadmin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/", "host": ["{{baseUrl}}"], "path": ["api","v1","auth",""] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/dashboard/stats", "host": ["{{baseUrl}}"], "path": ["api","v1","dashboard","stats"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Asset",
+      "item": [
+        {
+          "name": "Get Assets",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/asset/?page=1&limit=10",
+              "host": ["{{baseUrl}}"], "path": ["api","v1","asset",""],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "name", "value": "", "disabled": true },
+                { "key": "status", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Asset (→ Pending)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset/", "host": ["{{baseUrl}}"], "path": ["api","v1","asset",""] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"Laptop Dell Latitude\",\n  \"no_asset\": \"AST-001\",\n  \"location\": \"Ruang IT\",\n  \"building\": \"Gedung A\",\n  \"category\": \"Elektronik\",\n  \"merk\": \"Dell\",\n  \"status\": \"good\"\n}" }
+          }
+        },
+        {
+          "name": "Update Asset",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset/", "host": ["{{baseUrl}}"], "path": ["api","v1","asset",""] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": 1,\n  \"name\": \"Laptop Dell Updated\",\n  \"no_asset\": \"AST-001\",\n  \"location\": \"Ruang Server\",\n  \"building\": \"Gedung A\",\n  \"category\": \"Elektronik\",\n  \"merk\": \"Dell\",\n  \"status\": \"good\",\n  \"available_status\": \"available\"\n}" }
+          }
+        },
+        {
+          "name": "Delete Asset",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/v1/asset/1", "host": ["{{baseUrl}}"], "path": ["api","v1","asset","1"] }
+          }
+        },
+        {
+          "name": "Export Assets (Excel)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/asset/export", "host": ["{{baseUrl}}"], "path": ["api","v1","asset","export"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Asset Pending",
+      "item": [
+        {
+          "name": "Get All Pendings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_pending/", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_pending",""] }
+          }
+        },
+        {
+          "name": "Review Pending - Approve",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_pending/1/review", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_pending","1","review"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"status\": \"approved\"\n}" }
+          }
+        },
+        {
+          "name": "Review Pending - Reject",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_pending/1/review", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_pending","1","review"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"status\": \"rejected\",\n  \"reject_reason\": \"Data tidak lengkap\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Asset Maintenance",
+      "item": [
+        {
+          "name": "Schedule Maintenance",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_maintenance/1/schedule", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_maintenance","1","schedule"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"next_maintenance_date\": \"2026-06-01\"\n}" }
+          }
+        },
+        {
+          "name": "Start Maintenance",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_maintenance/1/start", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_maintenance","1","start"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"notes\": \"Cek dan bersihkan komponen\"\n}" }
+          }
+        },
+        {
+          "name": "Finish Maintenance",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_maintenance/1/finish", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_maintenance","1","finish"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"notes\": \"Selesai, semua komponen baik\",\n  \"next_maintenance_date\": \"2026-12-01\"\n}" }
+          }
+        },
+        {
+          "name": "Get All Maintenance Pendings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_maintenance_pending/", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_maintenance_pending",""] }
+          }
+        },
+        {
+          "name": "Review Maintenance Pending",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_maintenance_pending/1/review", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_maintenance_pending","1","review"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"status\": \"approved\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Asset Borrow",
+      "item": [
+        {
+          "name": "Ajukan Peminjaman",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_borrow/1/borrow", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_borrow","1","borrow"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"remark\": \"Keperluan presentasi proyek A\"\n}" }
+          }
+        },
+        {
+          "name": "Return Asset",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_borrow/1/return", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_borrow","1","return"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"remark\": \"Sudah selesai digunakan\"\n}" }
+          }
+        },
+        {
+          "name": "Get All Borrow Pendings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_borrow_pending/", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_borrow_pending",""] }
+          }
+        },
+        {
+          "name": "Review Borrow - Approve",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_borrow_pending/1/review", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_borrow_pending","1","review"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"status\": \"approved\"\n}" }
+          }
+        },
+        {
+          "name": "Review Borrow - Reject",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/asset_borrow_pending/1/review", "host": ["{{baseUrl}}"], "path": ["api","v1","asset_borrow_pending","1","review"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"status\": \"rejected\",\n  \"reject_reason\": \"Asset sedang diperlukan internal\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Get All Events",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/events/", "host": ["{{baseUrl}}"], "path": ["api","v1","events",""] }
+          }
+        },
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/events/", "host": ["{{baseUrl}}"], "path": ["api","v1","events",""] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"title\": \"Meeting Bulanan\",\n  \"start\": \"2026-04-10T09:00:00\",\n  \"end\": \"2026-04-10T11:00:00\",\n  \"all_day\": false,\n  \"color\": \"Primary\"\n}" }
+          }
+        },
+        {
+          "name": "Update Event",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/events/1", "host": ["{{baseUrl}}"], "path": ["api","v1","events","1"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"title\": \"Meeting Bulanan (Updated)\",\n  \"start\": \"2026-04-10T10:00:00\",\n  \"end\": \"2026-04-10T12:00:00\",\n  \"all_day\": false,\n  \"color\": \"Success\"\n}" }
+          }
+        },
+        {
+          "name": "Delete Event",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/events/1", "host": ["{{baseUrl}}"], "path": ["api","v1","events","1"] }
+          }
+        },
+        {
+          "name": "Sync Holidays",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/events/sync-holidays", "host": ["{{baseUrl}}"], "path": ["api","v1","events","sync-holidays"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pengadaan Asset",
+      "item": [
+        {
+          "name": "Ajukan Pengadaan",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/pengadaan_asset_pending/", "host": ["{{baseUrl}}"], "path": ["api","v1","pengadaan_asset_pending",""] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"Monitor LG 27 inch\",\n  \"category\": \"Elektronik\",\n  \"merk\": \"LG\",\n  \"spec\": \"27 inch, 4K, IPS Panel\",\n  \"qty\": 2,\n  \"unit\": \"unit\",\n  \"priority\": \"high\",\n  \"request_date\": \"2026-04-02\",\n  \"remark\": \"Untuk kebutuhan tim desain\"\n}" }
+          }
+        },
+        {
+          "name": "Get All Pengadaan Pendings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/pengadaan_asset_pending/", "host": ["{{baseUrl}}"], "path": ["api","v1","pengadaan_asset_pending",""] }
+          }
+        },
+        {
+          "name": "Get Pengadaan By ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/pengadaan_asset_pending/1", "host": ["{{baseUrl}}"], "path": ["api","v1","pengadaan_asset_pending","1"] }
+          }
+        },
+        {
+          "name": "Update Pengadaan",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/pengadaan_asset_pending/1", "host": ["{{baseUrl}}"], "path": ["api","v1","pengadaan_asset_pending","1"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"qty\": 3,\n  \"remark\": \"Update: butuh 3 unit\"\n}" }
+          }
+        },
+        {
+          "name": "Approve Pengadaan",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/pengadaan_asset_pending/1/approve", "host": ["{{baseUrl}}"], "path": ["api","v1","pengadaan_asset_pending","1","approve"] }
+          }
+        },
+        {
+          "name": "Reject Pengadaan",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/pengadaan_asset_pending/1/reject", "host": ["{{baseUrl}}"], "path": ["api","v1","pengadaan_asset_pending","1","reject"] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"reject_reason\": \"Budget tidak tersedia untuk kuartal ini\"\n}" }
+          }
+        },
+        {
+          "name": "Delete Pengadaan",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/pengadaan_asset_pending/1", "host": ["{{baseUrl}}"], "path": ["api","v1","pengadaan_asset_pending","1"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Get Chat History",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/chat/history?user_id1=1&user_id2=2&limit=50&offset=0",
+              "host": ["{{baseUrl}}"], "path": ["api","v1","chat","history"],
+              "query": [
+                { "key": "user_id1", "value": "1" },
+                { "key": "user_id2", "value": "2" },
+                { "key": "limit",    "value": "50" },
+                { "key": "offset",   "value": "0" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Role",
+      "item": [
+        {
+          "name": "Get All Roles",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/v1/role/", "host": ["{{baseUrl}}"], "path": ["api","v1","role",""] }
+          }
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/role/", "host": ["{{baseUrl}}"], "path": ["api","v1","role",""] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"name\": \"reviewer\"\n}" }
+          }
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/role/", "host": ["{{baseUrl}}"], "path": ["api","v1","role",""] },
+            "body": { "mode": "raw", "options": { "raw": { "language": "json" } },
+              "raw": "{\n  \"id\": 1,\n  \"name\": \"admin\"\n}" }
+          }
+        },
+        {
+          "name": "Delete Role",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/api/v1/role/1", "host": ["{{baseUrl}}"], "path": ["api","v1","role","1"] }
+          }
+        }
+      ]
+    }
+  ]
+}

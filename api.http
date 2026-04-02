@@ -1,0 +1,403 @@
+### ============================================================
+### SMAP API — HTTP Test Collection
+### Gunakan dengan VS Code extension: REST Client (humao.rest-client)
+### Atau copy-paste ke Postman/Insomnia
+### ============================================================
+
+@baseUrl = http://localhost:8080
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzUxODMyNTQsInVzZXJfaWQiOjF9.7vG6Dbr3VPGB1gTGdmmTL4qFrg4mYVcSgP2A59R58ts
+
+### ─────────────────────────────────────────────────────────────
+### HEALTH CHECK
+### ─────────────────────────────────────────────────────────────
+
+GET {{baseUrl}}/health
+
+###
+
+### ─────────────────────────────────────────────────────────────
+### AUTH
+### ─────────────────────────────────────────────────────────────
+
+# [1] Login — dapatkan token
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password123"
+}
+
+###
+
+# [2] Get current user (me)
+GET {{baseUrl}}/api/v1/auth/me
+Authorization: Bearer {{token}}
+
+###
+
+# [3] Onboarding — isi data pertama kali login
+POST {{baseUrl}}/api/v1/auth/onboarding
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "first_name": "Budi",
+  "last_name": "Santoso",
+  "no_handphone": "08123456789",
+  "password": "RahasiaKuat123!",
+  "photo_cropped": ""
+}
+
+###
+
+# [4] Get all users (superadmin only)
+GET {{baseUrl}}/api/v1/auth/
+Authorization: Bearer {{token}}
+
+###
+
+### ─────────────────────────────────────────────────────────────
+### DASHBOARD
+### ─────────────────────────────────────────────────────────────
+
+# [5] Dashboard stats (total, maintenance, good, borrowed, monthly chart)
+GET {{baseUrl}}/api/v1/dashboard/stats
+Authorization: Bearer {{token}}
+
+###
+
+### ─────────────────────────────────────────────────────────────
+### ASSET
+### ─────────────────────────────────────────────────────────────
+
+# [6] Get assets (+ filter opsional)
+GET {{baseUrl}}/api/v1/asset/?page=1&limit=10&name=laptop
+# Authorization tidak wajib untuk GET
+
+###
+
+# [7] Create asset (→ masuk pending dulu)
+POST {{baseUrl}}/api/v1/asset/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Laptop Dell Latitude",
+  "no_asset": "AST-001",
+  "location": "Ruang IT",
+  "building": "Gedung A",
+  "category": "Elektronik",
+  "merk": "Dell",
+  "status": "good"
+}
+
+###
+
+# [8] Update asset
+PUT {{baseUrl}}/api/v1/asset/
+Content-Type: application/json
+
+{
+  "id": 1,
+  "name": "Laptop Dell Latitude Updated",
+  "no_asset": "AST-001",
+  "location": "Ruang Server",
+  "building": "Gedung A",
+  "category": "Elektronik",
+  "merk": "Dell",
+  "status": "good",
+  "available_status": "available"
+}
+
+###
+
+# [9] Delete asset
+DELETE {{baseUrl}}/api/v1/asset/1
+
+###
+
+### ─────────────────────────────────────────────────────────────
+### ASSET PENDING (Create Asset → Review)
+### ─────────────────────────────────────────────────────────────
+
+# [10] List semua pending
+GET {{baseUrl}}/api/v1/asset_pending/
+Authorization: Bearer {{token}}
+
+###
+
+# [11] Review pending (approve / reject)
+POST {{baseUrl}}/api/v1/asset_pending/1/review
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "approved"
+}
+
+###
+
+# Contoh reject:
+# POST {{baseUrl}}/api/v1/asset_pending/1/review
+# { "status": "rejected", "reject_reason": "Data tidak lengkap" }
+
+### ─────────────────────────────────────────────────────────────
+### ASSET MAINTENANCE
+### ─────────────────────────────────────────────────────────────
+
+# [12] Schedule maintenance (set next_maintenance date)
+POST {{baseUrl}}/api/v1/asset_maintenance/1/schedule
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "next_maintenance_date": "2026-06-01"
+}
+
+###
+
+# [13] Start maintenance (→ ke pending jika approval aktif)
+POST {{baseUrl}}/api/v1/asset_maintenance/1/start
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "notes": "Cek dan bersihkan komponen"
+}
+
+###
+
+# [14] Finish maintenance
+POST {{baseUrl}}/api/v1/asset_maintenance/1/finish
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "notes": "Selesai, semua komponen baik",
+  "next_maintenance_date": "2026-12-01"
+}
+
+###
+
+# [15] List maintenance pendings
+GET {{baseUrl}}/api/v1/asset_maintenance_pending/
+Authorization: Bearer {{token}}
+
+###
+
+# [16] Review maintenance pending
+POST {{baseUrl}}/api/v1/asset_maintenance_pending/1/review
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "approved"
+}
+
+###
+
+### ─────────────────────────────────────────────────────────────
+### ASSET BORROW
+### ─────────────────────────────────────────────────────────────
+
+# [17] Ajukan peminjaman (selalu ke pending)
+POST {{baseUrl}}/api/v1/asset_borrow/1/borrow
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "remark": "Keperluan presentasi proyek A"
+}
+
+###
+
+# [18] Return asset
+POST {{baseUrl}}/api/v1/asset_borrow/1/return
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "remark": "Sudah selesai digunakan"
+}
+
+###
+
+# [19] List borrow pendings
+GET {{baseUrl}}/api/v1/asset_borrow_pending/
+Authorization: Bearer {{token}}
+
+###
+
+# [20] Review borrow (approve)
+POST {{baseUrl}}/api/v1/asset_borrow_pending/1/review
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "approved"
+}
+
+###
+
+# [21] Review borrow (reject)
+POST {{baseUrl}}/api/v1/asset_borrow_pending/1/review
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "rejected",
+  "reject_reason": "Asset sedang diperlukan internal"
+}
+
+###
+
+### ─────────────────────────────────────────────────────────────
+### EVENTS (Kalender)
+### ─────────────────────────────────────────────────────────────
+
+# [22] Get all events (public)
+GET {{baseUrl}}/api/v1/events/
+
+###
+
+# [23] Create event
+POST {{baseUrl}}/api/v1/events/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Meeting Bulanan",
+  "start": "2026-04-10T09:00:00",
+  "end": "2026-04-10T11:00:00",
+  "all_day": false,
+  "color": "Primary"
+}
+
+###
+
+# [24] Update event
+PUT {{baseUrl}}/api/v1/events/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Meeting Bulanan (Updated)",
+  "start": "2026-04-10T10:00:00",
+  "end": "2026-04-10T12:00:00",
+  "all_day": false,
+  "color": "Success"
+}
+
+###
+
+# [25] Delete event
+DELETE {{baseUrl}}/api/v1/events/1
+Authorization: Bearer {{token}}
+
+###
+
+# [26] Sync hari libur nasional dari date.nager.at
+POST {{baseUrl}}/api/v1/events/sync-holidays
+Authorization: Bearer {{token}}
+
+###
+
+### ─────────────────────────────────────────────────────────────
+### PENGADAAN ASSET (Request Asset Baru)
+### ─────────────────────────────────────────────────────────────
+
+# [27] Ajukan pengadaan
+POST {{baseUrl}}/api/v1/pengadaan_asset_pending/
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Monitor LG 27 inch",
+  "category": "Elektronik",
+  "merk": "LG",
+  "spec": "27 inch, 4K, IPS Panel",
+  "qty": 2,
+  "unit": "unit",
+  "priority": "high",
+  "request_date": "2026-04-02",
+  "remark": "Untuk kebutuhan tim desain"
+}
+
+###
+
+# [28] List semua pengadaan pending
+GET {{baseUrl}}/api/v1/pengadaan_asset_pending/
+Authorization: Bearer {{token}}
+
+###
+
+# [29] Detail satu pengadaan
+GET {{baseUrl}}/api/v1/pengadaan_asset_pending/1
+Authorization: Bearer {{token}}
+
+###
+
+# [30] Update pengadaan (hanya jika masih pending)
+PUT {{baseUrl}}/api/v1/pengadaan_asset_pending/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "qty": 3,
+  "remark": "Update: butuh 3 unit"
+}
+
+###
+
+# [31] Approve pengadaan (→ pindah ke pengadaan_assets)
+POST {{baseUrl}}/api/v1/pengadaan_asset_pending/1/approve
+Authorization: Bearer {{token}}
+
+###
+
+# [32] Reject pengadaan
+POST {{baseUrl}}/api/v1/pengadaan_asset_pending/1/reject
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "reject_reason": "Budget tidak tersedia untuk kuartal ini"
+}
+
+###
+
+# [33] Hapus pengadaan
+DELETE {{baseUrl}}/api/v1/pengadaan_asset_pending/1
+Authorization: Bearer {{token}}
+
+###
+
+### ─────────────────────────────────────────────────────────────
+### CHAT (REST)
+### ─────────────────────────────────────────────────────────────
+
+# [34] Get chat history antara 2 user
+GET {{baseUrl}}/api/v1/chat/history?user_id1=1&user_id2=5&limit=50&offset=0
+Authorization: Bearer {{token}}
+
+###
+
+### ─────────────────────────────────────────────────────────────
+### ROLE
+### ─────────────────────────────────────────────────────────────
+
+# [35] Get all roles
+GET {{baseUrl}}/api/v1/role/
+
+###
+
+# [36] Create role
+POST {{baseUrl}}/api/v1/role/
+Content-Type: application/json
+
+{
+  "name": "reviewer"
+}
+
+###
